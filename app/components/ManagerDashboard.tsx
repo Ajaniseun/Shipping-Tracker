@@ -16,6 +16,11 @@ function formatDate(dateString: string) {
 
 export default function ManagerDashboard() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [customer, setCustomer] = useState('');
@@ -29,15 +34,28 @@ export default function ManagerDashboard() {
   useEffect(() => {
     loadShipments();
   }, []);
-
-  async function loadShipments() {
+  async function loadShipments(p = page) {
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      const response = await fetch('/api/shipments');
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('q', searchQuery);
+      if (filterStatus) params.set('status', filterStatus);
+      params.set('page', String(p));
+      params.set('pageSize', String(pageSize));
+
+      const response = await fetch(`/api/shipments?${params.toString()}`);
       const data = await response.json();
-      setShipments(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        // backward compat
+        setShipments(data);
+        setTotal(data.length);
+      } else {
+        setShipments(Array.isArray(data.items) ? data.items : []);
+        setTotal(typeof data.total === 'number' ? data.total : 0);
+        setPage(typeof data.page === 'number' ? data.page : p);
+      }
     } catch {
       setError('Unable to load shipments.');
     } finally {
@@ -209,7 +227,37 @@ export default function ManagerDashboard() {
               <h2 className="text-2xl font-semibold text-slate-900">Active shipments</h2>
               <p className="mt-2 text-sm text-slate-600">Manage shipments and update each tracking status quickly.</p>
             </div>
-            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700">{loading ? 'Refreshing…' : `${totalShipments} shipments`}</div>
+            <div className="flex items-center gap-3">
+              <input
+                placeholder="Search tracking or customer"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm outline-none"
+              />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+              >
+                <option value="">All statuses</option>
+                {statusOptions.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  setPage(1);
+                  loadShipments(1);
+                }}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+              >
+                Search
+              </button>
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700">{loading ? 'Refreshing…' : `${total} shipments`}</div>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-3xl border border-slate-200">
@@ -312,6 +360,34 @@ export default function ManagerDashboard() {
             })}
           </div>
         </section>
+
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-slate-600">Page {page} of {Math.max(1, Math.ceil(total / pageSize))}</div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => {
+                const next = Math.max(1, page - 1);
+                setPage(next);
+                loadShipments(next);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm"
+            >
+              Prev
+            </button>
+            <button
+              disabled={page >= Math.ceil(total / pageSize)}
+              onClick={() => {
+                const next = page + 1;
+                setPage(next);
+                loadShipments(next);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </main>
   );
