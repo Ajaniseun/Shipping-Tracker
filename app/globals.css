@@ -13,12 +13,30 @@ body {
 
 /* subtle motion and focus polish */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(-24px) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
 }
 
 .animate-fade-up {
-  animation: fadeUp 360ms cubic-bezier(.2,.8,.2,1) both;
+  animation: fadeUp 560ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.animate-fade-up-slow {
+  animation: fadeUp 760ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.animate-fade-left {
+  animation: fadeLeft 560ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.animate-fade-up-delay {
+  animation: fadeUp 640ms cubic-bezier(.2,.8,.2,1) both;
+  animation-delay: 120ms;
 }
 
 /* small utilities used by dashboard for accessible focus outlines */
