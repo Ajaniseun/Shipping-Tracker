@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import type { Shipment } from '@/app/lib/shipments';
 import { getStatusOptions } from '@/app/lib/shipments';
+import StatusBadge from './StatusBadge';
+import DashboardCard from './DashboardCard';
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString(undefined, {
@@ -12,8 +14,6 @@ function formatDate(dateString: string) {
   });
 }
 
-const defaultStatus = 'In Transit';
-
 export default function ManagerDashboard() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,7 @@ export default function ManagerDashboard() {
   const [destination, setDestination] = useState('Toronto, Canada');
   const [activeUpdates, setActiveUpdates] = useState<Record<string, { status: string; location: string }>>({});
   const [creating, setCreating] = useState(false);
+  const [success, setSuccess] = useState('');
 
   const statusOptions = useMemo(() => getStatusOptions(), []);
 
@@ -32,6 +33,7 @@ export default function ManagerDashboard() {
   async function loadShipments() {
     setLoading(true);
     setError('');
+    setSuccess('');
     try {
       const response = await fetch('/api/shipments');
       const data = await response.json();
@@ -47,11 +49,13 @@ export default function ManagerDashboard() {
     event.preventDefault();
     if (!customer.trim()) {
       setError('Customer name is required for a new shipment.');
+      setSuccess('');
       return;
     }
 
     setCreating(true);
     setError('');
+    setSuccess('');
 
     try {
       const response = await fetch('/api/shipments', {
@@ -72,6 +76,7 @@ export default function ManagerDashboard() {
         ...current,
         [data.trackingNumber]: { status: data.status, location: data.location },
       }));
+      setSuccess(`Shipment created with tracking number ${data.trackingNumber}.`);
       loadShipments();
     } catch {
       setError('Unable to create shipment.');
@@ -84,11 +89,13 @@ export default function ManagerDashboard() {
     const update = activeUpdates[trackingNumber];
     if (!update || !update.status.trim() || !update.location.trim()) {
       setError('Status and location are required to update a shipment.');
+      setSuccess('');
       return;
     }
 
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
       const response = await fetch(`/api/shipments/${encodeURIComponent(trackingNumber)}`, {
@@ -103,6 +110,7 @@ export default function ManagerDashboard() {
         return;
       }
 
+      setSuccess(`Shipment ${trackingNumber} updated successfully.`);
       loadShipments();
     } catch {
       setError('Unable to update shipment.');
@@ -111,69 +119,100 @@ export default function ManagerDashboard() {
     }
   }
 
+  const totalShipments = shipments.length;
+  const inTransitCount = shipments.filter((shipment) => shipment.status === 'In Transit').length;
+  const deliveredCount = shipments.filter((shipment) => shipment.status === 'Delivered').length;
+
   return (
     <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600">Manager Portal</p>
-            <h1 className="text-3xl font-bold text-slate-900">Shipment dashboard</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600">Manager Portal</p>
+            <h1 className="mt-3 text-4xl font-semibold text-slate-900">Shipment dashboard</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">Manual package updates for now, built to look polished and future-ready.</p>
           </div>
-          <p className="text-sm text-slate-600">Manual site checking only — no customer login needed.</p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <DashboardCard title="Total shipments" value={totalShipments} />
+            <DashboardCard title="In transit" value={inTransitCount} />
+            <DashboardCard title="Delivered" value={deliveredCount} />
+          </div>
         </div>
 
-        <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+          <section className="rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-900/5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">Create a new shipment</h2>
+                <p className="mt-2 text-slate-600">Enter the customer and destination to generate a tracking number automatically.</p>
+              </div>
+              <div className="rounded-3xl bg-slate-50 px-4 py-2 text-sm text-slate-600">Demo workflow</div>
+            </div>
+
+            <form className="mt-6 grid gap-4 sm:grid-cols-[1.2fr_1fr]" onSubmit={handleCreate}>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-slate-700">Customer name</label>
+                <input
+                  value={customer}
+                  onChange={(event) => setCustomer(event.target.value)}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition focus:border-slate-400"
+                  placeholder="e.g. Juan Perez"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-slate-700">Destination</label>
+                <input
+                  value={destination}
+                  onChange={(event) => setDestination(event.target.value)}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition focus:border-slate-400"
+                  placeholder="Toronto, Canada"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  className="w-full rounded-3xl bg-slate-900 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  disabled={creating}
+                >
+                  {creating ? 'Creating shipment…' : 'Create shipment'}
+                </button>
+              </div>
+            </form>
+
+            {success ? <p className="mt-6 rounded-3xl bg-emerald-50 p-4 text-sm text-emerald-800">{success}</p> : null}
+            {error ? <p className="mt-6 rounded-3xl bg-red-50 p-4 text-sm text-red-700">{error}</p> : null}
+          </section>
+
+          <section className="rounded-[2rem] bg-slate-900 p-8 text-white shadow-xl shadow-slate-900/10">
+            <h3 className="text-2xl font-semibold">Manager essentials</h3>
+            <p className="mt-3 text-slate-300">Use this interface to update status, location, and keep customers informed with a clean workflow.</p>
+            <div className="mt-6 space-y-4">
+              <div className="rounded-3xl bg-slate-950/80 p-5">
+                <p className="text-sm uppercase tracking-[0.35em] text-cyan-200">Note</p>
+                <p className="mt-3 text-sm text-slate-300">The site is designed for manual updates today, with future support for automatic carrier updates.</p>
+              </div>
+              <div className="rounded-3xl bg-white/10 p-5">
+                <p className="text-sm uppercase tracking-[0.35em] text-slate-200">Manager tips</p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                  <li>• Use clear status labels so customers see the right stage.</li>
+                  <li>• Keep destination and location info accurate.</li>
+                  <li>• Use the tracking number when communicating with customers.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section className="rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-900/5">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold">Create a new shipment</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Enter a customer name and destination to generate a tracking number.
-              </p>
+              <h2 className="text-2xl font-semibold text-slate-900">Active shipments</h2>
+              <p className="mt-2 text-sm text-slate-600">Manage shipments and update each tracking status quickly.</p>
             </div>
+            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700">{loading ? 'Refreshing…' : `${totalShipments} shipments`}</div>
           </div>
 
-          <form className="grid gap-4 sm:grid-cols-[1.2fr_1fr]" onSubmit={handleCreate}>
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">Customer name</label>
-              <input
-                value={customer}
-                onChange={(event) => setCustomer(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none ring-0"
-                placeholder="e.g. Juan Perez"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">Destination</label>
-              <input
-                value={destination}
-                onChange={(event) => setDestination(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none ring-0"
-                placeholder="Toronto, Canada"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <button
-                type="submit"
-                className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700"
-                disabled={creating}
-              >
-                {creating ? 'Creating shipment…' : 'Create shipment'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {error ? <p className="mb-6 rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error}</p> : null}
-
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Active shipments</h2>
-            <p className="text-sm text-slate-500">Updates are visible immediately for manual customer checks.</p>
-          </div>
-
-          <div className="overflow-hidden rounded-xl border border-slate-200">
+          <div className="overflow-hidden rounded-3xl border border-slate-200">
             <table className="min-w-full divide-y divide-slate-200 text-left">
               <thead className="bg-slate-50">
                 <tr>
@@ -185,21 +224,17 @@ export default function ManagerDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {shipments.map((shipment) => {
-                  const update = activeUpdates[shipment.trackingNumber] ?? {
-                    status: shipment.status,
-                    location: shipment.location,
-                  };
-                  return (
-                    <tr key={shipment.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{shipment.trackingNumber}</td>
-                      <td className="px-4 py-3 text-slate-700">{shipment.customer}</td>
-                      <td className="px-4 py-3 text-slate-700">{shipment.status}</td>
-                      <td className="px-4 py-3 text-slate-700">{shipment.location}</td>
-                      <td className="px-4 py-3 text-slate-700">{formatDate(shipment.updatedAt)}</td>
-                    </tr>
-                  );
-                })}
+                {shipments.map((shipment) => (
+                  <tr key={shipment.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{shipment.trackingNumber}</td>
+                    <td className="px-4 py-3 text-slate-700">{shipment.customer}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={shipment.status} />
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">{shipment.location}</td>
+                    <td className="px-4 py-3 text-slate-700">{formatDate(shipment.updatedAt)}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -212,17 +247,20 @@ export default function ManagerDashboard() {
               };
 
               return (
-                <div key={shipment.trackingNumber} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div key={shipment.trackingNumber} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm text-slate-500">Shipment</p>
-                      <p className="text-lg font-semibold text-slate-900">{shipment.trackingNumber}</p>
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-slate-500">Shipment</p>
+                        <StatusBadge status={shipment.status} />
+                      </div>
+                      <p className="mt-2 text-xl font-semibold text-slate-900">{shipment.trackingNumber}</p>
                       <p className="text-sm text-slate-600">{shipment.customer}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleUpdate(shipment.trackingNumber)}
-                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                      className="rounded-3xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                     >
                       Save update
                     </button>
@@ -242,7 +280,7 @@ export default function ManagerDashboard() {
                             },
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none"
+                        className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none"
                       >
                         {statusOptions.map((option) => (
                           <option key={option} value={option}>
@@ -265,7 +303,7 @@ export default function ManagerDashboard() {
                             },
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none"
+                        className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none"
                       />
                     </label>
                   </div>
@@ -273,7 +311,7 @@ export default function ManagerDashboard() {
               );
             })}
           </div>
-        </div>
+        </section>
       </div>
     </main>
   );

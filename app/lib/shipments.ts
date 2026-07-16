@@ -54,7 +54,11 @@ const shipments: Shipment[] = [
 const statusOptions = ['Picked Up', 'In Transit', 'Customs Review', 'Out for Delivery', 'Delivered'];
 
 function createTrackingNumber(id: number) {
-  return `COL-${1000 + id}`;
+  const trackingNumber = `COL-${1000 + id}`;
+  if (shipments.some((shipment) => shipment.trackingNumber === trackingNumber)) {
+    return createTrackingNumber(id + 1);
+  }
+  return trackingNumber;
 }
 
 function getTimestamp() {
