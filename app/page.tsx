@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-50 pb-12 pt-6 sm:pt-10 animate-fade-up">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
-        <header className="overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-900 via-blue-900 to-sky-700 px-8 py-10 text-white shadow-2xl shadow-slate-900/15 animate-fade-up scale-100">
+        <header className="overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-900 via-blue-900 to-sky-700 px-8 py-10 text-white shadow-2xl shadow-slate-900/15 animate-fade-up animate-pulse-glow scale-100">
           <div className="grid gap-10 lg:grid-cols-[2fr_1fr] lg:items-center">
             <div className="space-y-6 animate-fade-up-slow">
               <p className="text-sm font-semibold uppercase tracking-[0.35em] text-cyan-200">Shipping Tracker</p>
@@ -37,9 +37,9 @@ export default function HomePage() {
                 </a>
               </div>
             </div>
-            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
+            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6 shadow-2xl shadow-slate-900/10 backdrop-blur-xl animate-float">
               <div className="space-y-6">
-                <div className="rounded-3xl bg-slate-950/85 p-6 text-white shadow-lg shadow-slate-950/20 transition duration-500 hover:-translate-y-1 hover:shadow-2xl animate-fade-left">
+                <div className="rounded-3xl bg-slate-950/85 p-6 text-white shadow-lg shadow-slate-950/20 transition duration-500 hover:-translate-y-1 hover:shadow-2xl animate-fade-left animate-pulse-glow">
                   <p className="text-sm uppercase tracking-[0.35em] text-cyan-200">Demo snapshot</p>
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <div className="rounded-3xl bg-white/10 p-4 transition duration-300 hover:bg-white/15">
