@@ -142,7 +142,7 @@ export default function ManagerDashboard() {
   const deliveredCount = shipments.filter((shipment) => shipment.status === 'Delivered').length;
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-slate-100 p-6 animate-fade-up">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -189,7 +189,7 @@ export default function ManagerDashboard() {
               <div className="sm:col-span-2">
                 <button
                   type="submit"
-                  className="w-full rounded-3xl bg-slate-900 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  className="w-full btn-primary transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:bg-slate-400"
                   disabled={creating}
                 >
                   {creating ? 'Creating shipment…' : 'Create shipment'}
@@ -273,7 +273,7 @@ export default function ManagerDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {shipments.map((shipment) => (
-                  <tr key={shipment.id}>
+                  <tr key={shipment.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">{shipment.trackingNumber}</td>
                     <td className="px-4 py-3 text-slate-700">{shipment.customer}</td>
                     <td className="px-4 py-3">
@@ -287,7 +287,7 @@ export default function ManagerDashboard() {
             </table>
           </div>
 
-          <div className="mt-6 space-y-6">
+            <div className="mt-6 space-y-6">
             {shipments.map((shipment) => {
               const update = activeUpdates[shipment.trackingNumber] ?? {
                 status: shipment.status,
@@ -295,7 +295,7 @@ export default function ManagerDashboard() {
               };
 
               return (
-                <div key={shipment.trackingNumber} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                <div key={shipment.trackingNumber} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-transform transition-shadow">
                   <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-3">
@@ -308,7 +308,7 @@ export default function ManagerDashboard() {
                     <button
                       type="button"
                       onClick={() => handleUpdate(shipment.trackingNumber)}
-                      className="rounded-3xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      className="rounded-3xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus-ring"
                     >
                       Save update
                     </button>
