@@ -10,11 +10,15 @@ export function middleware(request: NextRequest) {
   }
 
   const isManagerRoute = pathname === '/manager' || pathname.startsWith('/manager/');
+  const isManagerLogin = pathname === '/manager/login' || pathname.startsWith('/manager/login');
   const isShipmentsApiWrite = pathname.startsWith('/api/shipments') && request.method !== 'GET';
 
   if (!isManagerRoute && !isShipmentsApiWrite) {
     return NextResponse.next();
   }
+
+  // Allow the manager login page to be visited without a session to avoid redirect loops
+  if (isManagerLogin) return NextResponse.next();
 
   const session = request.cookies.get('manager_session') ?? null;
   if (!session) {
